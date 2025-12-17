@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Online Book Store</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>
+  <h1>📚 Online Book Store</h1>
+  <p>Medical | Engineering | Management | Novels | Comics</p>
+</header>
+
+<main>
+  <section class="books-section">
+    <h2>Available Books</h2>
+    <div class="books-container" id="books"></div>
+  </section>
+
+  <section class="cart-section">
+    <h2>Your Cart</h2>
+    <div id="cart-items"></div>
+    <form id="order-form">
+      <h3>Order Details</h3>
+      <label>Name:<br>
+        <input type="text" id="customer-name" required>
+      </label>
+      <label>Address:<br>
+        <textarea id="customer-address" required></textarea>
+      </label>
+      <label>Payment Method:<br>
+        <select id="payment-method" required>
+          <option value="Card">Card</option>
+          <option value="Cash on Delivery">Cash on Delivery</option>
+        </select>
+      </label>
+      <button type="submit">Place Order</button>
+    </form>
+  </section>
+</main>
+
+<footer>
+  <p>© 2025 Online Book Store</p>
+</footer>
+
+<script>
+  const backendUrl = "http://35.166.121.131:3000"; // replace with your EC2 public IP
+  let cart = [];
+
+  function updateCartUI() {
+    const cartDiv = document.getElementById("cart-items");
+    if(cart.length === 0) {
+      cartDiv.innerHTML = "<p>Your cart is empty.</p>";
+      return;
+    }
+
+    let output = "<ul>";
+    cart.forEach((item, idx) => {
+      output += `<li>${item.title} - Quantity: ${item.quantity} <button onclick="removeFromCart(${idx})">Remove</button></li>`;
+    });
+    output += "</ul>";
+    cartDiv.innerHTML = output;
+  }
+
+  function removeFromCart(idx) {
+    cart.splice(idx, 1);
+    updateCartUI();
+  }
+
+  function addToCart(book) {
+    const existing = cart.find(item => item.id === book.id);
+    if(existing) {
+      existing.quantity += 1;
+    } else {
+      cart.push({...book, quantity: 1});
+    }
+    updateCartUI();
+  }
+
+  // Fetch books from backend
+  fetch(`${backendUrl}/books`)
+    .then(res => res.json())
+    .then(data => {
+      const container = document.getElementById("books");
+      let output = "";
+      data.forEach(book => {
+        output += `
+          <div class="card">
+            <img src="https://source.unsplash.com/300x200/?book,${book.category}" alt="${book.title}">
+            <h3>${book.title}</h3>
+            <p>Author: ${book.author}</p>
+            <p>Category: ${book.category}</p>
+            <p class="price">₹${book.price}</p>
+            <button onclick='addToCart(${JSON.stringify(book)})'>Add to Cart</button>
+          </div>
+        `;
+      });
+      container.innerHTML = output;
+    })
+    .catch(err => console.error("Error fetching books:", err));
+
+  // Submit order
+  document.getElementById("order-form").addEventListener("submit", function(e){
+    e.preventDefault();
+    if(cart.length === 0){
+      alert("Cart is empty! Please add some books.");
+      return;
+    }
+
+    const orderDetails = {
+      customer_name: document.getElementById("customer-name").value,
+      customer_address: document.getElementById("customer-address").value,
+      payment_method: document.getElementById("payment-method").value,
+      items: cart
+    };
+
+    fetch(`${backendUrl}/order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(orderDetails)
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert(data.message + " (Order ID: " + data.order_id + ")");
+      cart = [];
+      updateCartUI();
+      this.reset();
+    })
+    .catch(err => {
+      console.error(err);
+      alert("Failed to place order. Try again.");
+    });
+  });
+</script>
+
+</body>
+</html>
