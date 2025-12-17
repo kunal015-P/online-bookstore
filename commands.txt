@@ -1,0 +1,106 @@
+# ===============================
+# SYSTEM SETUP (EC2 Amazon Linux)
+# ===============================
+
+sudo yum update -y
+node -v
+git --version
+docker --version
+
+# ===============================
+# PROJECT SETUP
+# ===============================
+
+mkdir bookstore-project
+cd bookstore-project
+
+# ===============================
+# BACKEND SETUP (Node.js)
+# ===============================
+
+mkdir backend
+cd backend
+npm init -y
+npm install express mysql cors body-parser
+nano app.js
+node app.js
+
+curl http://localhost:3000
+curl http://localhost:3000/books
+
+# ===============================
+# DOCKER SETUP
+# ===============================
+
+nano Dockerfile
+sudo docker build -t bookstore-backend .
+sudo docker run -d -p 3000:3000 --name bookstore bookstore-backend
+sudo docker ps
+
+# ===============================
+# DATABASE (RDS MySQL)
+# ===============================
+
+sudo yum install mariadb -y
+mariadb -h <RDS-ENDPOINT> -u admin -p
+
+CREATE DATABASE bookstore;
+USE bookstore;
+
+CREATE TABLE books (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  title VARCHAR(100),
+  author VARCHAR(100),
+  price INT,
+  category VARCHAR(50)
+);
+
+CREATE TABLE orders (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  customer_name VARCHAR(100),
+  customer_address VARCHAR(255),
+  payment_method VARCHAR(50),
+  order_items TEXT,
+  order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO books (title, author, price, category) VALUES
+('Medical Anatomy', 'Dr. Smith', 500, 'Medical'),
+('Engineering Mathematics', 'Dr. Kumar', 450, 'Engineering'),
+('Management Principles', 'Peter Drucker', 400, 'Management'),
+('Harry Potter', 'J.K. Rowling', 300, 'Novel'),
+('Marvel Comics', 'Stan Lee', 200, 'Comics');
+
+SELECT * FROM books;
+SELECT * FROM orders;
+EXIT;
+
+# ===============================
+# FRONTEND SETUP
+# ===============================
+
+cd ~/bookstore-project
+mkdir frontend
+cd frontend
+nano index.html
+nano style.css
+
+# ===============================
+# GIT & GITHUB
+# ===============================
+
+cd ~/bookstore-project
+git init
+nano .gitignore
+git add .
+git commit -m "Initial commit - Online Bookstore project"
+git remote add origin https://github.com/kunal015-P/online-bookstore.git
+git branch -M main
+git push -u origin main --force
+
+# ===============================
+# VERIFY
+# ===============================
+
+git status
+git log --oneline
